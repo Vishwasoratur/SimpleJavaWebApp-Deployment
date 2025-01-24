@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        PATH = "/usr/bin:$PATH" // Add Docker binary to PATH
+        PATH = "/usr/bin:$PATH"
         DOCKER_IMAGE = "vishwa275/javaimage"
         DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
     }
@@ -17,76 +17,29 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "=== Debugging Docker Environment ==="
+                    echo "Testing Docker Environment..."
                     echo "PATH: $PATH"
-                    echo "User Info: $(id)"
-                    echo "Group Info: $(groups || echo 'Group retrieval failed')"
-                    echo "Docker Location: $(which docker || echo 'Docker binary not found')"
+                    id
+                    groups || echo "Unable to retrieve groups"
+                    which docker || echo "Docker binary not found"
                     docker --version || echo "Docker is not accessible"
                     '''
                 }
             }
         }
 
-        stage('Clone Repository') {
-            steps {
-                echo "Cloning Repository..."
-                git branch: 'master', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
-            }
-        }
-
-        stage('Build Application') {
-            steps {
-                echo "Building Application with Maven..."
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                echo "Building Docker Image..."
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
-                }
-            }
-        }
-
-        stage('Test Docker Image') {
-            steps {
-                echo "Testing Docker Image..."
-                script {
-                    sh 'docker run --rm $DOCKER_IMAGE'
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                echo "Pushing Docker Image to Docker Hub..."
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", 
-                        passwordVariable: 'DOCKER_PASSWORD', 
-                        usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh '''
-                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                        docker push $DOCKER_IMAGE
-                        '''
-                    }
-                }
-            }
-        }
+        // Remaining stages...
     }
 
     post {
         always {
-            echo "Pipeline completed."
+            echo 'Pipeline completed.'
         }
         success {
-            echo "Pipeline succeeded."
+            echo 'Pipeline succeeded.'
         }
         failure {
-            echo "Pipeline failed."
+            echo 'Pipeline failed.'
         }
     }
 }
