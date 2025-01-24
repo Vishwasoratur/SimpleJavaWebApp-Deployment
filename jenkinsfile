@@ -2,16 +2,32 @@ pipeline {
     agent {
         docker {
             image 'maven:3.8.1-openjdk-17-slim' // Use Maven with OpenJDK 17 as the base image
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket for Docker commands
+            args '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker' // Mount Docker socket and binary
         }
     }
 
     environment {
+        PATH = "/usr/bin:$PATH" // Ensure Docker is in PATH
         DOCKER_IMAGE = "vishwa275/javaimage"
         DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
     }
 
     stages {
+        stage('Debug Environment') {
+            steps {
+                script {
+                    sh '''
+                    echo "Testing Docker Environment..."
+                    echo "PATH: $PATH"
+                    id
+                    groups
+                    which docker
+                    docker --version || echo "Docker not found!"
+                    '''
+                }
+            }
+        }
+
         stage('Clone Repository') {
             steps {
                 echo 'Cloning Repository...'
@@ -48,12 +64,11 @@ pipeline {
             steps {
                 echo 'Pushing Docker Image to Docker Hub...'
                 script {
-                    // Use Jenkins credentials function to fetch the Docker credentials
                     withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh """
+                        sh '''
                         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                         docker push $DOCKER_IMAGE
-                        """
+                        '''
                     }
                 }
             }
