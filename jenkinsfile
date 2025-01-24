@@ -1,13 +1,13 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.1-openjdk-17-slim'
-            args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker'
+            image 'maven:3.8.1-openjdk-17-slim' // Use Maven with OpenJDK 17 as the base image
+            args '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker' // Mount Docker socket and binary
         }
     }
 
     environment {
-        PATH = "/usr/bin:$PATH"
+        PATH = "/usr/bin:$PATH" // Ensure Docker is in PATH
         DOCKER_IMAGE = "vishwa275/javaimage"
         DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
     }
@@ -20,15 +20,59 @@ pipeline {
                     echo "Testing Docker Environment..."
                     echo "PATH: $PATH"
                     id
-                    groups || echo "Unable to retrieve groups"
-                    which docker || echo "Docker binary not found"
-                    docker --version || echo "Docker is not accessible"
+                    groups
+                    which docker
+                    docker --version || echo "Docker not found!"
                     '''
                 }
             }
         }
 
-        // Remaining stages...
+        stage('Clone Repository') {
+            steps {
+                echo 'Cloning Repository...'
+                git branch: 'master', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                echo 'Building Application with Maven...'
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker Image...'
+                script {
+                    sh 'docker build -t $DOCKER_IMAGE .'
+                }
+            }
+        }
+
+        stage('Test Docker Image') {
+            steps {
+                echo 'Testing Docker Image...'
+                script {
+                    sh 'docker run --rm $DOCKER_IMAGE'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo 'Pushing Docker Image to Docker Hub...'
+                script {
+                    withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh '''
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push $DOCKER_IMAGE
+                        '''
+                    }
+                }
+            }
+        }
     }
 
     post {
