@@ -26,12 +26,10 @@ pipeline {
             }
         }
 
-        stage('Debug') {
+        stage('Install Docker') {
             steps {
-                echo 'Checking Docker installation...'
-                sh 'echo $PATH' // Print PATH to debug
-                sh 'which docker' // Check if Docker command is found
-                sh '/usr/bin/docker --version' // Ensure Docker is accessible
+                echo 'Installing Docker...'
+                sh 'apt-get update && apt-get install -y docker.io'
             }
         }
 
@@ -39,8 +37,7 @@ pipeline {
             steps {
                 echo 'Building Docker Image...'
                 script {
-                    // Use full path to ensure Docker is found
-                    sh '/usr/bin/docker build -t $DOCKER_IMAGE .'
+                    sh 'docker build -t $DOCKER_IMAGE .'
                 }
             }
         }
@@ -49,8 +46,7 @@ pipeline {
             steps {
                 echo 'Testing Docker Image...'
                 script {
-                    // Use full path to ensure Docker is found
-                    sh '/usr/bin/docker run --rm $DOCKER_IMAGE'
+                    sh 'docker run --rm $DOCKER_IMAGE'
                 }
             }
         }
@@ -62,8 +58,8 @@ pipeline {
                     // Use Jenkins credentials function to fetch the Docker credentials
                     withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh """
-                        echo $DOCKER_PASSWORD | /usr/bin/docker login -u $DOCKER_USERNAME --password-stdin
-                        /usr/bin/docker push $DOCKER_IMAGE
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push $DOCKER_IMAGE
                         """
                     }
                 }
