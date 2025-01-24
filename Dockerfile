@@ -1,18 +1,21 @@
 # Stage 1: Build the application
-FROM maven:3.8.1-openjdk-17-slim AS build
+FROM maven:3.8.5-eclipse-temurin-17 AS build
 
 # Set the working directory inside the container
 WORKDIR /app
 
 # Copy the Maven project files
 COPY pom.xml ./
+RUN mvn dependency:resolve dependency:resolve-plugins -B
+
+# Copy the source code
 COPY src ./src
 
 # Run Maven to package the application (skip tests for faster builds)
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -B
 
 # Stage 2: Create the final image
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre
 
 # Set the working directory inside the container
 WORKDIR /app
