@@ -1,7 +1,7 @@
 # Use a multi-stage build to keep the image size smaller
 
 # Stage 1: Build the application using a Maven image
-FROM maven:3.8.6-openjdk-17-slim AS build
+FROM maven:3.8.1-openjdk-17-slim AS build
 
 # Set the working directory inside the container
 WORKDIR /app
