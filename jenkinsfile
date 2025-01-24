@@ -1,17 +1,18 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.1-openjdk-17-slim' 
-            args '-v /var/run/docker.sock:/var/run/docker.sock' 
+            image 'openjdk:17-jdk-alpine' // Base image with OpenJDK 17
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
 
-    environment {
-        DOCKER_IMAGE = "vishwa275/javaimage"
-        DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
-    }
-
     stages {
+        stage('Install Maven') {
+            steps {
+                sh 'apk add --update maven' 
+            }
+        }
+
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
@@ -27,26 +28,41 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t $DOCKER_IMAGE .' 
+                    try {
+                        sh 'docker build -t vishwa275/javaimage .'
+                    } catch (err) {
+                        echo "Docker build failed: ${err.message}"
+                        currentBuild.result = 'FAILED'
+                    }
                 }
             }
         }
 
         stage('Test Docker Image') {
             steps {
-                script {
-                    sh 'docker run --rm $DOCKER_IMAGE' 
+                try {
+                    sh 'docker run --rm vishwa275/javaimage'
+                } catch (err) {
+                    echo "Docker run failed: ${err.message}"
+                    currentBuild.result = 'FAILED'
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                    sh """
-                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                    docker push $DOCKER_IMAGE
-                    """
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials-id', 
+                                                passwordVariable: 'DOCKER_PASSWORD', 
+                                                usernameVariable: 'DOCKER_USERNAME')]) {
+                    try {
+                        sh """
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push vishwa275/javaimage 
+                        """
+                    } catch (err) {
+                        echo "Docker push failed: ${err.message}"
+                        currentBuild.result = 'FAILED'
+                    }
                 }
             }
         }
