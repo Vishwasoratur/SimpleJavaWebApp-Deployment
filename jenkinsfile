@@ -1,21 +1,21 @@
 pipeline {
     agent {
         docker {
-            image 'yourusername/maven-openjdk-docker' // Use the custom image with Maven, OpenJDK, and Docker
+            image 'maven:3.8.1-openjdk-17-slim' // Use Maven with OpenJDK 17 as the base image
             args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket for Docker commands
         }
     }
 
     environment {
-        DOCKER_IMAGE = "vishwa275/javaimage"
-        DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
+        DOCKER_IMAGE = "yourusername/maven-openjdk-docker" // Change this to your Docker Hub image name
+        DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id" // Jenkins credentials for Docker Hub login
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 echo 'Cloning Repository...'
-                git branch: 'master', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
+                git branch: 'main', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
             }
         }
 
