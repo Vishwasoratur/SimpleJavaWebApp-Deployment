@@ -26,6 +26,16 @@ pipeline {
             }
         }
 
+        stage('Install Docker') {
+            steps {
+                echo 'Installing Docker...'
+                sh '''
+                    apt-get update && apt-get install -y sudo
+                    sudo apt-get update && sudo apt-get install -y docker.io
+                '''
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker Image...'
@@ -48,7 +58,6 @@ pipeline {
             steps {
                 echo 'Pushing Docker Image to Docker Hub...'
                 script {
-                    // Use Jenkins credentials function to fetch the Docker credentials
                     withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh """
                         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
