@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.1-openjdk-17-slim' // Use Maven with OpenJDK 17 as the base image
+            image 'docker:19.03.12' // Use a Docker image with Docker pre-installed
             args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket for Docker commands
         }
     }
@@ -23,16 +23,6 @@ pipeline {
             steps {
                 echo 'Building Application with Maven...'
                 sh 'mvn clean package -DskipTests'
-            }
-        }
-
-        stage('Install Docker') {
-            steps {
-                echo 'Installing Docker...'
-                sh '''
-                    apt-get update && apt-get install -y sudo
-                    sudo apt-get update && sudo apt-get install -y docker.io
-                '''
             }
         }
 
