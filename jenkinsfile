@@ -12,10 +12,19 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                echo 'Cleaning workspace...'
+                deleteDir() // Ensure a clean workspace
+            }
+        }
+
         stage('Clone Repository') {
             steps {
                 echo 'Cloning Repository...'
-                git branch: 'master', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
+                git branch: 'master', 
+                    url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git', 
+                    credentialsId: 'your-git-credentials-id' // Add Git credentials ID
             }
         }
 
@@ -48,10 +57,9 @@ pipeline {
             steps {
                 echo 'Pushing Docker Image to Docker Hub...'
                 script {
-                    // Use Jenkins credentials function to fetch the Docker credentials
                     withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh """
-                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin || exit 1
                         docker push $DOCKER_IMAGE
                         """
                     }
@@ -72,3 +80,4 @@ pipeline {
         }
     }
 }
+
