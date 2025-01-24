@@ -1,8 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.1-openjdk-17-slim' // Maven image with OpenJDK 17
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket for Docker commands
+            image 'maven:3.8.1-openjdk-17-slim' 
+            args '-v /var/run/docker.sock:/var/run/docker.sock' 
         }
     }
 
@@ -14,46 +14,39 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                echo 'Cloning Repository...'
                 git branch: 'main', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
             }
         }
 
         stage('Build Application') {
             steps {
-                echo 'Building Application with Maven...'
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean package -DskipTests' 
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker Image...'
                 script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    sh 'docker build -t $DOCKER_IMAGE .' 
                 }
             }
         }
 
         stage('Test Docker Image') {
             steps {
-                echo 'Testing Docker Image...'
                 script {
-                    sh 'docker run --rm $DOCKER_IMAGE'
+                    sh 'docker run --rm $DOCKER_IMAGE' 
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                echo 'Pushing Docker Image to Docker Hub...'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh """
-                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                        docker push $DOCKER_IMAGE
-                        """
-                    }
+                withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh """
+                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                    docker push $DOCKER_IMAGE
+                    """
                 }
             }
         }
