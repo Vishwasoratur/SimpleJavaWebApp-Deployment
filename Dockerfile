@@ -1,4 +1,4 @@
-# Stage 1: Build the application
+# Stage 1: Build stage
 FROM maven:3.8.1-openjdk-17-slim AS build
 
 # Set the working directory inside the container
