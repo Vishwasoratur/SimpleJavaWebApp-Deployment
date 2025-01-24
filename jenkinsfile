@@ -1,14 +1,14 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.1-openjdk-17-slim' // Maven with OpenJDK 17 as base image
+            image 'abhishekf5/maven-abhishek-docker-agent:v1' // Use your custom image that includes Docker, JDK, and Maven
             args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket for Docker commands
         }
     }
 
     environment {
-        DOCKER_IMAGE = "vishwa275/javaimage"
-        DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
+        DOCKER_IMAGE = "vishwa275/javaimage" // Your Docker image name
+        DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id" // Your Docker Hub credentials ID in Jenkins
     }
 
     stages {
