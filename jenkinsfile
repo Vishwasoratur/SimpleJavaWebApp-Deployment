@@ -1,13 +1,13 @@
 pipeline {
     agent {
         docker {
-            image 'maven:3.8.1-openjdk-17-slim' // Use Maven with OpenJDK 17 as the base image
-            args '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker' // Mount Docker socket and binary
+            image 'maven:3.8.1-openjdk-17-slim'
+            args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker'
         }
     }
 
     environment {
-        PATH = "/usr/bin:$PATH" // Ensure Docker is in PATH
+        PATH = "/usr/bin:$PATH" // Add Docker binary to PATH
         DOCKER_IMAGE = "vishwa275/javaimage"
         DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
     }
@@ -17,12 +17,12 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Testing Docker Environment..."
+                    echo "=== Debugging Docker Environment ==="
                     echo "PATH: $PATH"
-                    id
-                    groups
-                    which docker
-                    docker --version || echo "Docker not found!"
+                    echo "User Info: $(id)"
+                    echo "Group Info: $(groups || echo 'Group retrieval failed')"
+                    echo "Docker Location: $(which docker || echo 'Docker binary not found')"
+                    docker --version || echo "Docker is not accessible"
                     '''
                 }
             }
@@ -30,21 +30,21 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                echo 'Cloning Repository...'
+                echo "Cloning Repository..."
                 git branch: 'master', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
             }
         }
 
         stage('Build Application') {
             steps {
-                echo 'Building Application with Maven...'
+                echo "Building Application with Maven..."
                 sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker Image...'
+                echo "Building Docker Image..."
                 script {
                     sh 'docker build -t $DOCKER_IMAGE .'
                 }
@@ -53,7 +53,7 @@ pipeline {
 
         stage('Test Docker Image') {
             steps {
-                echo 'Testing Docker Image...'
+                echo "Testing Docker Image..."
                 script {
                     sh 'docker run --rm $DOCKER_IMAGE'
                 }
@@ -62,9 +62,12 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                echo 'Pushing Docker Image to Docker Hub...'
+                echo "Pushing Docker Image to Docker Hub..."
                 script {
-                    withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", 
+                        passwordVariable: 'DOCKER_PASSWORD', 
+                        usernameVariable: 'DOCKER_USERNAME')]) {
                         sh '''
                         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                         docker push $DOCKER_IMAGE
@@ -77,13 +80,13 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline completed.'
+            echo "Pipeline completed."
         }
         success {
-            echo 'Pipeline succeeded.'
+            echo "Pipeline succeeded."
         }
         failure {
-            echo 'Pipeline failed.'
+            echo "Pipeline failed."
         }
     }
 }
