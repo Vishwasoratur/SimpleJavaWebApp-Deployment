@@ -15,7 +15,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 echo 'Cloning Repository...'
-                git branch: 'master', https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git
+                git branch: 'master', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
             }
         }
 
@@ -48,10 +48,13 @@ pipeline {
             steps {
                 echo 'Pushing Docker Image to Docker Hub...'
                 script {
-                    sh """
-                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                    docker push $DOCKER_IMAGE
-                    """
+                    // Use Jenkins credentials function to fetch the Docker credentials
+                    withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh """
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push $DOCKER_IMAGE
+                        """
+                    }
                 }
             }
         }
