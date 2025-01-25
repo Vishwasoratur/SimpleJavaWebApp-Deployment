@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app-deployment
+  labels:
+    app: demo-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+      - name: demo-app
+        image: <your-dockerhub-username>/demo-app:latest # Replace with your Docker Hub image
+        ports:
+        - containerPort: 8080 # Spring Boot defaults to port 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod" # Example: Spring Boot profile
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
