@@ -2,8 +2,7 @@ pipeline {
     agent {
         docker {
             image 'maven:3.8.1-openjdk-17-slim'
-            args '-v /var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath:/mnt/jenkins_workspace' // Adjusted volume mount
-            label 'docker'  // Optional: specify label if you have multiple agents
+            args '-v /var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath:/mnt/jenkins_workspace'
         }
     }
 
