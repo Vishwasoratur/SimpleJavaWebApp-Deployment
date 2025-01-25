@@ -16,8 +16,10 @@ pipeline {
         stage('Build Application') {
             steps {
                 script {
-                    // Build Docker image using the provided Dockerfile
-                    bat 'docker build -t $DOCKER_IMAGE .'
+                    // Correctly reference the DOCKER_IMAGE variable in Windows
+                    bat """
+                    docker build -t ${DOCKER_IMAGE} .
+                    """
                 }
             }
         }
@@ -30,7 +32,7 @@ pipeline {
                                                         usernameVariable: 'DOCKER_USERNAME')]) {
                         bat """
                         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                        docker push $DOCKER_IMAGE
+                        docker push ${DOCKER_IMAGE}
                         """
                     }
                 }
