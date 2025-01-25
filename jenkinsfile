@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'maven:3.8.1-openjdk-17-slim'
-            args '-v /var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath:/mnt/jenkins_workspace'
+            args '-v //var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath:/mnt/jenkins_workspace -w C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath'
         }
     }
 
@@ -26,7 +26,7 @@ pipeline {
 
         stage('Build and Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: '$DOCKER_REGISTRY_CREDENTIALS', 
+                withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", 
                                                 passwordVariable: 'DOCKER_PASSWORD', 
                                                 usernameVariable: 'DOCKER_USERNAME')]) {
                     bat """
