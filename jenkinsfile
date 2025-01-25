@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.8.1-openjdk-17-slim'
-            args '-v //var/run/docker.sock:/var/run/docker.sock -v C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath:/mnt/jenkins_workspace -w C:/ProgramData/Jenkins/.jenkins/workspace/Vishwanath'
-        }
-    }
+    agent any
 
     environment {
         DOCKER_IMAGE = "vishwa275/javaimage"
@@ -20,20 +15,24 @@ pipeline {
 
         stage('Build Application') {
             steps {
-                bat 'mvn clean package -DskipTests'
+                script {
+                    // Build Docker image using the provided Dockerfile
+                    bat 'docker build -t $DOCKER_IMAGE .'
+                }
             }
         }
 
-        stage('Build and Push Docker Image') {
+        stage('Push Docker Image to Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", 
-                                                passwordVariable: 'DOCKER_PASSWORD', 
-                                                usernameVariable: 'DOCKER_USERNAME')]) {
-                    bat """
-                    docker build -t $DOCKER_IMAGE .
-                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                    docker push $DOCKER_IMAGE
-                    """
+                script {
+                    withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", 
+                                                        passwordVariable: 'DOCKER_PASSWORD', 
+                                                        usernameVariable: 'DOCKER_USERNAME')]) {
+                        bat """
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push $DOCKER_IMAGE
+                        """
+                    }
                 }
             }
         }
@@ -51,4 +50,3 @@ pipeline {
         }
     }
 }
-
