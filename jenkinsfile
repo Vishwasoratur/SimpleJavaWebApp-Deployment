@@ -46,8 +46,8 @@ pipeline {
         stage('Update Kubernetes Manifests') {
             steps {
                 script {
-                    sh """
-                    sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|' k8s/deployment.yaml
+                    bat """
+                    powershell -Command "(Get-Content k8s/deployment.yaml) -replace 'image: ${DOCKER_IMAGE}:.*', 'image: ${DOCKER_IMAGE}:${BUILD_NUMBER}' | Set-Content k8s/deployment.yaml"
                     """
                 }
             }
@@ -61,7 +61,7 @@ pipeline {
                         passwordVariable: 'GIT_PASSWORD',
                         usernameVariable: 'GIT_USERNAME'
                     )]) {
-                        sh """
+                        bat """
                         git config user.email "ci-bot@example.com"
                         git config user.name "CI Bot"
                         git add k8s/deployment.yaml
