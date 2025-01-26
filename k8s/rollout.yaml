@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app
+  namespace: default
+spec:
+  replicas: 3
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+      - name: demo-app
+        image: vishwa275/javaimage:22  # Update with your new image
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+  strategy:
+    canary:
+      canaryService: demo-app-canary
+      stableService: demo-app-stable
+      steps:
+      - setWeight: 20    # Shift 20% of traffic to the new version
+      - pause:           # Pause for manual verification or monitoring
+          duration: 5m   # Wait for 5 minutes
+      - setWeight: 50    # Shift 50% of traffic
+      - pause:           # Wait for another verification period
+          duration: 5m
+      - setWeight: 100   # Shift 100% traffic to the new version
