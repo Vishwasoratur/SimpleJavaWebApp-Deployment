@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: vishwa275/javaimage:latest # Use specific tag if needed
+        image: vishwa275/javaimage:21
         ports:
         - containerPort: 8080
         envFrom:
