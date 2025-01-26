@@ -32,9 +32,56 @@ spec:
       stableService: demo-app-stable
       steps:
       - setWeight: 20    # Shift 20% of traffic to the new version
+      - analysis:
+          templates:
+          - templateName: demo-app-analysis-template  # Analysis during rollout
       - pause:           # Pause for manual verification or monitoring
           duration: 5m   # Wait for 5 minutes
       - setWeight: 50    # Shift 50% of traffic
+      - analysis:
+          templates:
+          - templateName: demo-app-analysis-template  # Another analysis step
       - pause:           # Wait for another verification period
           duration: 5m
       - setWeight: 100   # Shift 100% traffic to the new version
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: demo-app-monitor
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: demo-app
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+    - default
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: demo-app-analysis-template
+  namespace: default
+spec:
+  metrics:
+  - name: request-latency
+    interval: 1m
+    successCondition: result < 0.5
+    provider:
+      prometheus:
+        address: http://prometheus.default.svc.cluster.local
+        query: |
+          histogram_quantile(0.90, rate(http_request_duration_seconds_bucket{job="demo-app"}[1m]))
+  - name: error-rate
+    interval: 1m
+    successCondition: result < 0.05
+    provider:
+      prometheus:
+        address: http://prometheus.default.svc.cluster.local
+        query: |
+          sum(rate(http_requests_total{job="demo-app", status!~"2.."}[1m])) / sum(rate(http_requests_total{job="demo-app"}[1m]))
