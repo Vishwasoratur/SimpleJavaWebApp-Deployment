@@ -4,21 +4,23 @@ pipeline {
     environment {
         DOCKER_IMAGE = "vishwa275/javaimage"
         DOCKER_REGISTRY_CREDENTIALS = "dockerhub-credentials-id"
+        GIT_CREDENTIALS = "github-credentials-id"
+        GIT_REPO = "https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git"
+        GIT_BRANCH = "main"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Vishwasoratur/SimpleJavaWebApp-Deployment.git'
+                git branch: "${GIT_BRANCH}", url: "${GIT_REPO}"
             }
         }
 
         stage('Build Application') {
             steps {
                 script {
-                    // Correctly reference the DOCKER_IMAGE variable in Windows
                     bat """
-                    docker build -t ${DOCKER_IMAGE} .
+                    docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
                     """
                 }
             }
@@ -27,12 +29,44 @@ pipeline {
         stage('Push Docker Image to Registry') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: "$DOCKER_REGISTRY_CREDENTIALS", 
-                                                        passwordVariable: 'DOCKER_PASSWORD', 
-                                                        usernameVariable: 'DOCKER_USERNAME')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: "${DOCKER_REGISTRY_CREDENTIALS}",
+                        passwordVariable: 'DOCKER_PASSWORD',
+                        usernameVariable: 'DOCKER_USERNAME'
+                    )]) {
                         bat """
                         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                        docker push ${DOCKER_IMAGE}
+                        docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Update Kubernetes Manifests') {
+            steps {
+                script {
+                    sh """
+                    sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|' k8s/deployment.yaml
+                    """
+                }
+            }
+        }
+
+        stage('Commit and Push Changes to GitHub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: "${GIT_CREDENTIALS}",
+                        passwordVariable: 'GIT_PASSWORD',
+                        usernameVariable: 'GIT_USERNAME'
+                    )]) {
+                        sh """
+                        git config user.email "ci-bot@example.com"
+                        git config user.name "CI Bot"
+                        git add k8s/deployment.yaml
+                        git commit -m "Update image tag to ${DOCKER_IMAGE}:${BUILD_NUMBER}"
+                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${GIT_REPO.replace('https://', '')} ${GIT_BRANCH}
                         """
                     }
                 }
