@@ -7,6 +7,6 @@ spec:
     app: demo-app
   ports:
   - protocol: TCP
-    port: 80
-    targetPort: 8080
-  type: LoadBalancer
+    port: 80                  # Exposes the service on port 80
+    targetPort: 8080           # Connects to the application's container on port 8080
+  type: LoadBalancer           # Exposes the service externally via a cloud load balancer
