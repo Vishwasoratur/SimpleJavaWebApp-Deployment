@@ -9,6 +9,11 @@ spec:
   selector:
     matchLabels:
       app: demo-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   template:
     metadata:
       labels:
@@ -16,9 +21,9 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: <your-dockerhub-username>/demo-app:latest # Replace with your Docker Hub image
+        image: vishwa275/javaimage:latest # Replace with specific tag if needed
         ports:
-        - containerPort: 8080 # Spring Boot defaults to port 8080
+        - containerPort: 8080 # Ensure this matches your application's configuration
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod" # Example: Spring Boot profile
