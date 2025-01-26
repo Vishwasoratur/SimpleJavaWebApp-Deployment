@@ -21,12 +21,14 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: vishwa275/javaimage:latest # Replace with specific tag if needed
+        image: vishwa275/javaimage:latest # Use specific tag if needed
         ports:
-        - containerPort: 8080 # Ensure this matches your application's configuration
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "prod" # Example: Spring Boot profile
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: demo-app-config
+        - secretRef:
+            name: demo-app-secret
         resources:
           requests:
             memory: "128Mi"
